@@ -1,0 +1,9 @@
+{
+	"name": "flychat",
+	"version": "0.0.1",
+	"dependencies": {
+		"jwt-simple": "^0.5.1",
+		"pubcontrol": "^1.1.1",
+		"grip": "^1.2.8"
+	}
+}

@@ -1,0 +1,4 @@
+.fly.yml
+.fly.secrets.yml
+.fly
+node_modules

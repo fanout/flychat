@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta id="meta" name="viewport" content="width=device-width; initial-scale=1.0" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        color: #ffffff;
+        background-color: #c5ccff;
+      }
+
+      input, div {
+        font-size: 16px;
+      }
+
+      form#join-form {
+        width: 80%;
+        overflow: hidden;
+        margin-top: 30%;
+        margin-bottom: 30%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      span#nick-input-span {
+        display: block;
+        overflow: hidden;
+      }
+
+      input#nick-input {
+        max-width: 100%;
+      }
+    </style>
+
+    <script type="text/javascript">
+      $(function () {
+        $('#join-form').submit(function () {
+          var user = $('#nick-input').val();
+          if(user) {
+            var url = new URL(window.location);
+            url.searchParams.set('user', user);
+            window.location = url;
+          }
+          return false;
+        });
+
+        $('#nick-input').focus();
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="join-elements">
+      <form id="join-form">
+        <span id="nick-input-span">Nickname: <input type="text" id="nick-input" />
+        <button id="join-button">Join</button></span>
+      </form>
+    </div>
+  </body>
+</html>

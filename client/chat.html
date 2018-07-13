@@ -1,0 +1,178 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta id="meta" name="viewport" content="width=device-width; initial-scale=1.0" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+    <script src="/js/eventsource.min.js"></script>
+    <script src="/js/reconnecting-eventsource.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+
+      input, div {
+        font-size: 16px;
+      }
+
+      header#chat-header {
+        height: 32px;
+        line-height: 32px;
+        text-align: center;
+        color: #ffffff;
+        background-color: #c5ccff;
+        margin: 0;
+      }
+
+      div#chat-log {
+        overflow: auto;
+      }
+
+      div#chat-input-area {
+        width: 100%;
+        height: 32px;
+        line-height: 32px;
+        color: #ffffff;
+        background-color: #c5ccff;
+        margin: 0;
+      }
+
+      form#send-form {
+        width: 100%;
+        overflow: hidden;
+        margin: 0;
+      }
+
+      span#chat-input-span {
+        display: block;
+        overflow: hidden;
+      }
+
+      input#chat-input {
+        width: 100%;
+      }
+
+      button#send-button {
+        float: right;
+      }
+
+      input#nick-input {
+        width: 400px;
+      }
+    </style>
+
+    <script type="text/javascript">
+      var scrollToBottom = function (e) {
+        e.scrollTop = e.scrollHeight;
+      }
+
+      var tryScrollToBottom = function (e, threshold) {
+        if(e.scrollTop + e.clientHeight + threshold > e.scrollHeight) {
+          e.scrollTop = e.scrollHeight;
+        }
+      }
+
+      var appendLog = function (s) {
+        var log = $('#chat-log');
+        log.append(s + '<br>');
+        tryScrollToBottom(log.get(0), 50);
+      };
+
+      var startChat = function (room, user) {
+        console.log('user=[' + user + ']');
+
+        var log = $('#chat-log').get(0);
+        scrollToBottom(log);
+
+        var uri = '/rooms/' + room + '/messages/';
+        var es = new ReconnectingEventSource(uri);
+
+        var firstConnect = true;
+
+        es.onopen = function () {
+          if(!firstConnect) {
+            appendLog('*** connected');
+          }
+          firstConnect = false;
+        };
+
+        es.onerror = function () {
+          appendLog('*** connection lost, reconnecting...');
+        };
+
+        es.addEventListener('stream-reset', function () {
+          appendLog('*** client too far behind, please refresh');
+        }, false);
+
+        es.addEventListener('stream-error', function (e) {
+          // hard stop
+          es.close();
+          e = JSON.parse(e.data);
+          appendLog('*** stream error: ' + e.condition + ': ' + e.text);
+        }, false);
+
+        es.addEventListener('message', function (e) {
+          console.log('event: ' + e.data);
+          msg = JSON.parse(e.data);
+
+          appendLog('<b>' + msg.from + '</b>: ' + msg.text);
+        }, false);
+
+        $('#send-form').submit(function () {
+          var text = $('#chat-input').val();
+
+          $('#chat-input').attr('disabled', 'true');
+          $('#send-button').attr('disabled', 'true');
+          $('#send-button').text('Sending...');
+          $.post('/rooms/' + room + '/messages/', { from: user, text: text }
+          ).done(function (data) {
+            console.log('send response: ' + JSON.stringify(data));
+          }).fail(function () {
+            alert('failed to send message');
+          }).always(function () {
+            $('#chat-input').val('');
+            $('#send-button').text('Send');
+            $('#chat-input').removeAttr('disabled');
+            $('#send-button').removeAttr('disabled');
+            $('#chat-input').focus();
+          });
+
+          return false;
+        });
+
+        $('#chat-input').focus();
+      };
+
+      $(function () {
+        var url = new URL(window.location);
+        var room = url.pathname.substring(1);
+        var user = url.searchParams.get('user');
+
+        $('#chat-log').height(window.innerHeight - 64);
+        $('#chat-header').text('#' + room);
+
+        startChat(room, user);
+      });
+    </script>
+  </head>
+
+  <body>
+    <header id="chat-header"></header>
+
+    <div id="chat-elements">
+      <div id="chat-log"></div>
+    </div>
+
+    <div id="chat-input-area">
+      <form id="send-form">
+        <button id="send-button">Send</button>
+        <span id="chat-input-span"><input type="text" id="chat-input" autocomplete="off" /></span>
+      </form>
+    </div>
+
+  </body>
+</html>
