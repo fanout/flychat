@@ -113,6 +113,7 @@
 
         es.addEventListener('stream-reset', function () {
           appendLog('*** client too far behind, please refresh');
+          es.close();
         }, false);
 
         es.addEventListener('stream-error', function (e) {
