@@ -133,6 +133,10 @@
           console.log('event: ' + e.data);
           msg = JSON.parse(e.data);
 
+          // NOTE: for maximum consistency, we should consider:
+          //   - removing retracted message from the log
+          //   - moving detected provisional message to end of log
+
           // have we seen this message already?
           if (msg.provisionalId) {
             var msgElement = $('#' + msg.provisionalId);
