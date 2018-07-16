@@ -63,6 +63,11 @@
       input#nick-input {
         width: 400px;
       }
+
+      span#code-link {
+        float: right;
+        margin-right: 16;
+      }
     </style>
 
     <script type="text/javascript">
@@ -153,7 +158,7 @@
         var user = url.searchParams.get('user');
 
         $('#chat-log').height(window.innerHeight - 64);
-        $('#chat-header').text('#' + room);
+        $('#room-name').text('#' + room);
 
         startChat(room, user);
       });
@@ -161,7 +166,12 @@
   </head>
 
   <body>
-    <header id="chat-header"></header>
+    <header id="chat-header">
+      <span id="room-name"></span>
+      <span id="code-link">
+        <a href="https://github.com/fanout/flychat">code</a>
+      </span>
+    </header>
 
     <div id="chat-elements">
       <div id="chat-log"></div>
