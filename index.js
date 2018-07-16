@@ -73,11 +73,13 @@ addEventListener('fetch', function (event) {
     event.respondWith(handler(event.request))
 })
 
-async function sendEvent(room, data) {
+async function sendEvent(room, data, id, prevId) {
     const s = 'event: message\nid: ' + data.id + '\ndata: ' + JSON.stringify(data) + '\n\n'
 
     const item = {
         channel: 'messages-' + room,
+        id: id,
+        'prev-id': prevId,
         formats: {
             'http-stream': {
                 content: s
@@ -225,12 +227,12 @@ function dbGetMessages(room) {
             if (data.Item) {
                 resolve({
                     messages: data.Item.messages,
-                    'last-event-id': data.Item.messages[data.Item.messages.length - 1].id
+                    lastEventId: data.Item.messages[data.Item.messages.length - 1].id
                 })
             } else {
                 resolve({
                     messages: [],
-                    'last-event-id': 0
+                    lastEventId: 0
                 })
             }
         })
@@ -262,7 +264,7 @@ async function messages(request, room) {
         const data = await dbAppendMessage(room, mfrom, text)
 
         if (data) {
-            await sendEvent(room, data)
+            await sendEvent(room, data, '' + data.id, '' + (data.id - 1))
 
             const respInit = {
                 status: 200,
@@ -283,11 +285,26 @@ async function messages(request, room) {
             return new Response('Failed to save message.\n', respInit)
         }
     } else {
-        if (request.headers.get('Accept') == 'text/event-stream') {
-            var lastEventId = request.headers.get('Last-Event-ID')
-            if (!lastEventId) {
-                const url = new URL(request.url)
-                lastEventId = url.searchParams.get('lastEventId')
+        var gripLastId = null
+
+        const gripLast = request.headers.get('Grip-Last')
+        if (gripLast) {
+            const pos = gripLast.indexOf('last-id=')
+            gripLastId = gripLast.substring(pos + 8)
+        }
+
+        if (request.headers.get('Accept') == 'text/event-stream' || gripLastId) {
+            const url = new URL(request.url)
+
+            var lastEventId = null
+
+            if (gripLastId) {
+                lastEventId = gripLastId
+            } else {
+                lastEventId = request.headers.get('Last-Event-ID')
+                if (!lastEventId) {
+                    lastEventId = url.searchParams.get('lastEventId')
+                }
             }
 
             if (lastEventId) {
@@ -299,21 +316,29 @@ async function messages(request, room) {
                 lastEventId = null
             }
 
+            const data = await dbGetMessages(room)
+
             const respInit = {
                 status: 200,
                 headers: {
                     'Content-Type': 'text/event-stream',
                     'Cache-Control': 'no-cache',
                     'Grip-Hold': 'stream',
-                    'Grip-Channel': 'messages-' + room,
-                    'Grip-Keep-Alive': 'event: keep-alive\\ndata:\\n\\n; format=cstring; timeout=20'
+                    'Grip-Channel': 'messages-' + room + '; prev-id=' + data.lastEventId,
+                    'Grip-Keep-Alive': 'event: keep-alive\\ndata:\\n\\n; format=cstring; timeout=20',
+                    'Grip-Link': '<' + url.pathname + '?recover=true>; rel=next'
                 }
             }
 
-            const data = await dbGetMessages(room)
-
             const events = []
-            events.push('event: stream-open\n\n')
+
+            if (!gripLastId) {
+                events.push('event: stream-open\n\n')
+            }
+
+            if (lastEventId != null && data.messages.length > 0 && lastEventId < data.messages[0].id - 1) {
+                events.push('event: stream-reset\n\n')
+            }
 
             for (var i = 0; i < data.messages.length; ++i) {
                 const msg = data.messages[i]
@@ -378,7 +403,7 @@ async function handler(request) {
         }
 
         var result = templateSrc
-        result = result.replace('{lastEventId}', data['last-event-id'])
+        result = result.replace('{lastEventId}', data.lastEventId)
         result = result.replace('{#messages}', msgsHtml)
 
         const respInit = {
