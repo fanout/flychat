@@ -2,6 +2,7 @@ const jwt = require('jwt-simple')
 const grip = require('grip')
 const AWS = require('aws-sdk')
 const EventEmitter = require('events')
+const uuidv4 = require('uuid/v4')
 
 const MAX_MESSAGES = 50
 
@@ -73,18 +74,29 @@ addEventListener('fetch', function (event) {
     event.respondWith(handler(event.request))
 })
 
-async function sendEvent(room, data, id, prevId) {
-    const s = 'event: message\nid: ' + data.id + '\ndata: ' + JSON.stringify(data) + '\n\n'
+async function sendMessage(room, msg) {
+    var s = 'event: message\n'
+
+    if (msg.id) {
+        s += 'id: ' + msg.id + '\n'
+    }
+
+    s += 'data: ' + JSON.stringify(msg) + '\n\n'
 
     const item = {
-        channel: 'messages-' + room,
-        id: id,
-        'prev-id': prevId,
         formats: {
             'http-stream': {
                 content: s
             }
         }
+    }
+
+    if (msg.id) {
+        item.channel = 'messages-' + room
+        item.id = '' + msg.id
+        item['prev-id'] = '' + (msg.id - 1)
+    } else {
+        item.channel = 'provisional-' + room
     }
 
     const headers = {
@@ -113,10 +125,10 @@ async function sendEvent(room, data, id, prevId) {
     }
 }
 
-function dbAppendMessage(room, mfrom, text) {
+function dbAppendMessage(room, msgArg) {
     return new Promise(resolve => {
         var tryWrite = function () {
-            console.log('Writing:', {from: mfrom, text: text})
+            console.log('Writing:', msgArg)
 
             var params = {
                 TableName: app.config.awsDbTable,
@@ -152,8 +164,9 @@ function dbAppendMessage(room, mfrom, text) {
 
                 const msg = {
                     id: item.version,
-                    from: mfrom,
-                    text: text,
+                    provisionalId: msgArg.provisionalId,
+                    from: msgArg.from,
+                    text: msgArg.text,
                     date: new Date().toISOString()
                 }
 
@@ -261,20 +274,26 @@ async function messages(request, room) {
             return new Response('Bad Request\n', respInit)
         }
 
-        const data = await dbAppendMessage(room, mfrom, text)
+        const msg = {
+            provisionalId: uuidv4(),
+            from: mfrom,
+            text: text
+        }
 
-        if (data) {
-            await sendEvent(room, data, '' + data.id, '' + (data.id - 1))
+        // send to clients immediately
+        await sendMessage(room, msg)
 
-            const respInit = {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+        // write to DB
+        var savedMsg
+        try {
+            savedMsg = await dbAppendMessage(room, msg)
+        } catch (error) {
+            console.error(error)
 
-            return new Response(JSON.stringify(data) + '\n', respInit)
-        } else {
+            // send retraction
+            msg.retracted = true
+            await sendMessage(room, msg)
+
             const respInit = {
                 status: 500,
                 headers: {
@@ -284,6 +303,18 @@ async function messages(request, room) {
 
             return new Response('Failed to save message.\n', respInit)
         }
+
+        // send to clients again, officially
+        await sendMessage(room, savedMsg)
+
+        const respInit = {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+
+        return new Response(JSON.stringify(savedMsg) + '\n', respInit)
     } else {
         var gripLastId = null
 
@@ -324,7 +355,7 @@ async function messages(request, room) {
                     'Content-Type': 'text/event-stream',
                     'Cache-Control': 'no-cache',
                     'Grip-Hold': 'stream',
-                    'Grip-Channel': 'messages-' + room + '; prev-id=' + data.lastEventId,
+                    'Grip-Channel': 'messages-' + room + '; prev-id=' + data.lastEventId + ', provisional-' + room,
                     'Grip-Keep-Alive': 'event: keep-alive\\ndata:\\n\\n; format=cstring; timeout=20',
                     'Grip-Link': '<' + url.pathname + '?recover=true>; rel=next'
                 }
@@ -396,7 +427,11 @@ async function handler(request) {
         var msgsHtml = ''
         for (var i = 0; i < data.messages.length; ++i) {
             const msg = data.messages[i]
-            msgsHtml += '<b>' + msg.from + '</b>: ' + msg.text + '<br />'
+            msgsHtml += '<span'
+            if (msg.provisionalId) {
+                msgsHtml += ' id="' + msg.provisionalId + '"'
+            }
+            msgsHtml += '><b>' + msg.from + '</b>: ' + msg.text + '</span><br />'
             if (i + 1 < data.messages.length) {
                 msgsHtml += '\n        '
             }

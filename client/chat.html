@@ -81,9 +81,15 @@
         }
       }
 
-      var appendLog = function (s) {
+      var appendLog = function (s, id) {
         var log = $('#chat-log');
-        log.append(s + '<br>');
+        var span = $('<span></span>');
+        if (id) {
+            span.attr('id', id);
+        }
+        span.append(s);
+        log.append(span);
+        log.append('<br/>');
         tryScrollToBottom(log.get(0), 50);
       };
 
@@ -127,7 +133,16 @@
           console.log('event: ' + e.data);
           msg = JSON.parse(e.data);
 
-          appendLog('<b>' + msg.from + '</b>: ' + msg.text);
+          // have we seen this message already?
+          if (msg.provisionalId) {
+            var msgElement = $('#' + msg.provisionalId);
+            if (msgElement.length > 0) {
+              // if so, don't append it again
+              return
+            }
+          }
+
+          appendLog('<b>' + msg.from + '</b>: ' + msg.text, msg.provisionalId);
         }, false);
 
         $('#send-form').submit(function () {
@@ -138,7 +153,7 @@
           $('#send-button').text('Sending...');
           $.post('/rooms/' + room + '/messages/', { from: user, text: text }
           ).done(function (data) {
-            console.log('send response: ' + JSON.stringify(data));
+            console.log('send success: ' + JSON.stringify(data));
           }).fail(function () {
             alert('failed to send message');
           }).always(function () {

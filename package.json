@@ -5,7 +5,8 @@
     "aws-sdk": "^2.274.1",
     "grip": "^1.2.8",
     "jwt-simple": "^0.5.1",
-    "pubcontrol": "^1.1.1"
+    "pubcontrol": "^1.1.1",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "yaml": "^1.0.0-rc.7"
