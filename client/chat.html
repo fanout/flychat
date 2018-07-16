@@ -94,7 +94,9 @@
         scrollToBottom(log);
 
         var uri = '/rooms/' + room + '/messages/';
-        var es = new ReconnectingEventSource(uri);
+        var es = new ReconnectingEventSource(uri, {
+          lastEventId: '{lastEventId}'
+        });
 
         var firstConnect = true;
 
@@ -174,7 +176,9 @@
     </header>
 
     <div id="chat-elements">
-      <div id="chat-log"></div>
+      <div id="chat-log">
+        {#messages}
+      </div>
     </div>
 
     <div id="chat-input-area">

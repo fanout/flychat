@@ -131,7 +131,7 @@ function dbAppendMessage(room, mfrom, text) {
                     return
                 }
 
-                //console.log("Read succeeded:", JSON.stringify(data, null, 2))
+                //console.log('Read succeeded:', JSON.stringify(data, null, 2))
 
                 var item;
                 if (data.Item) {
@@ -235,6 +235,11 @@ function dbGetMessages(room) {
             }
         })
     })
+}
+
+async function getFile(fileName) {
+    const resp = await fetch('file://client/' + fileName)
+    return await resp.text()
 }
 
 async function messages(request, room) {
@@ -354,21 +359,43 @@ async function handler(request) {
         const user = url.searchParams.get('user')
 
         if (!user) {
-            const res = await fetch("file://client/join.html")
-            res.headers.set("content-type", "text/html")
+            const res = await fetch('file://client/join.html')
+            res.headers.set('content-type', 'text/html')
             return res
         }
 
-        const res = await fetch("file://client/chat.html")
-        res.headers.set("content-type", "text/html")
-        return res
+        const data = await dbGetMessages(room)
+
+        const templateSrc = await getFile('chat.html')
+
+        var msgsHtml = ''
+        for (var i = 0; i < data.messages.length; ++i) {
+            const msg = data.messages[i]
+            msgsHtml += '<b>' + msg.from + '</b>: ' + msg.text + '<br />'
+            if (i + 1 < data.messages.length) {
+                msgsHtml += '\n        '
+            }
+        }
+
+        var result = templateSrc
+        result = result.replace('{lastEventId}', data['last-event-id'])
+        result = result.replace('{#messages}', msgsHtml)
+
+        const respInit = {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/html',
+                'Cache-Control': 'no-cache'
+            }
+        }
+        return new Response(result, respInit)
     } else if (url.pathname == '/js/eventsource.min.js') {
-        const res = await fetch("file://client/eventsource.min.js")
-        res.headers.set("content-type", "application/javascript")
+        const res = await fetch('file://client/eventsource.min.js')
+        res.headers.set('content-type', 'application/javascript')
         return res
     } else if (url.pathname == '/js/reconnecting-eventsource.js') {
-        const res = await fetch("file://client/reconnecting-eventsource.js")
-        res.headers.set("content-type", "application/javascript")
+        const res = await fetch('file://client/reconnecting-eventsource.js')
+        res.headers.set('content-type', 'application/javascript')
         return res
     } else if (pathParts.length >= 2 && pathParts[0] == 'rooms') {
         const room = pathParts[1]
