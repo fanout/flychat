@@ -1,10 +1,13 @@
 {
-	"name": "flychat",
-	"version": "0.0.1",
-	"dependencies": {
-		"jwt-simple": "^0.5.1",
-		"pubcontrol": "^1.1.1",
-		"grip": "^1.2.8",
-		"aws-sdk": "^2.274.1"
-	}
+  "name": "flychat",
+  "version": "0.0.1",
+  "dependencies": {
+    "jwt-simple": "^0.5.1",
+    "pubcontrol": "^1.1.1",
+    "grip": "^1.2.8",
+    "aws-sdk": "^2.274.1"
+  },
+  "devDependencies": {
+    "yaml": "^1.0.0-rc.7"
+  }
 }
