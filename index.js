@@ -147,7 +147,7 @@ function dbAppendMessage(room, msgArg) {
 
                 //console.log('Read succeeded:', JSON.stringify(data, null, 2))
 
-                var item;
+                var item
                 if (data.Item) {
                     item = data.Item
                 } else {
@@ -459,7 +459,7 @@ async function handler(request) {
         return res
     } else if (pathParts.length >= 2 && pathParts[0] == 'rooms') {
         const room = pathParts[1]
-        const subpath = pathParts.slice(2).join('/');
+        const subpath = pathParts.slice(2).join('/')
         if (subpath == 'messages/') {
             return await messages(request, room);
         } else {
