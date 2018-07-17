@@ -8,7 +8,7 @@ There is a public instance: http://flychat.fanoutapp.com/
 
 Fanout Cloud works as a proxy server in front of the Fly app. Clients make requests to Fanout Cloud, which are then forwarded to the Fly app. For the streaming endpoint, the Fly app controls Fanout Cloud using the [GRIP protocol](https://pushpin.org/docs/protocols/grip). For all other endpoints, the Fly app sends normal HTTP responses and Fanout Cloud acts as a passthrough.
 
-The [client/server API](#API) is simple and clean: mainly a GET to receive a Server-Sent Events stream of messages for a chatroom, and a POST to send a message to a chatroom.
+The [client/server API](#api) is simple and clean: mainly a GET to receive a Server-Sent Events stream of messages for a chatroom, and a POST to send a message to a chatroom.
 
 This project highlights several important technical achievements:
 
