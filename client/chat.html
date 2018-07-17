@@ -59,12 +59,21 @@
         width: 100%;
       }
 
+      span#send-label {
+        float: left;
+      }
+
       button#send-button {
         float: right;
       }
 
       input#nick-input {
         width: 400px;
+      }
+
+      span#user-label {
+        float: left;
+        margin-left: 16;
       }
 
       span#code-link {
@@ -184,6 +193,7 @@
 
         $('#chat-log').height(window.innerHeight - 64);
         $('#room-name').text('#' + room);
+        $('#user-label').text('User: ' + user);
 
         startChat(room, user);
       });
@@ -193,6 +203,7 @@
   <body>
     <header id="chat-header">
       <span id="room-name"></span>
+      <span id="user-label"></span>
       <span id="code-link">
         <a href="https://github.com/fanout/flychat">code</a>
       </span>
@@ -206,6 +217,7 @@
 
     <div id="chat-input-area">
       <form id="send-form">
+        <span id="send-label">Enter a message: </span>
         <button id="send-button">Send</button>
         <span id="chat-input-span"><input type="text" id="chat-input" autocomplete="off" /></span>
       </form>
