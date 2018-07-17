@@ -1,4 +1,4 @@
-const jwt = require('jwt-simple')
+const pubcontrol = require('pubcontrol')
 const grip = require('grip')
 const AWS = require('aws-sdk')
 const EventEmitter = require('events')
@@ -70,6 +70,8 @@ const db = new AWS.DynamoDB.DocumentClient()
 
 const gripConfig = grip.parseGripUri(app.config.gripUrl)
 
+var pub = new grip.GripPubControl(gripConfig)
+
 addEventListener('fetch', function (event) {
     event.respondWith(handler(event.request))
 })
@@ -83,46 +85,36 @@ async function sendMessage(room, msg) {
 
     s += 'data: ' + JSON.stringify(msg) + '\n\n'
 
-    const item = {
-        formats: {
-            'http-stream': {
-                content: s
-            }
-        }
-    }
-
+    var channel
+    var id = undefined
+    var prevId = undefined
     if (msg.id) {
-        item.channel = 'messages-' + room
-        item.id = '' + msg.id
-        item['prev-id'] = '' + (msg.id - 1)
+        channel = 'messages-' + room
+        id = '' + msg.id
+        prevId = '' + (msg.id - 1)
     } else {
-        item.channel = 'provisional-' + room
+        channel = 'provisional-' + room
     }
 
-    const headers = {
-        'Content-Type': 'application/json'
-    }
+    const p = new Promise(resolve => {
+        pub.publishHttpStream(
+            channel,
+            s,
+            id,
+            prevId,
+            function (success, message, context) {
+                if (!success) {
+                    console.log('Publish failed!');
+                    console.log('Message: ' + message);
+                    console.log('Context: ');
+                    console.dir(context);
+                }
+                resolve()
+            }
+        )
+    })
 
-    if (gripConfig.control_iss) {
-        const claim = {
-            iss: gripConfig.control_iss,
-            exp: Math.floor(new Date().getTime() / 1000) + 600
-        }
-
-        const token = jwt.encode(claim, gripConfig.key)
-
-        headers['Authorization'] = 'Bearer ' + token
-    }
-
-    try {
-        await fetch(gripConfig.control_uri + '/publish/', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({items: [item]})
-        })
-    } catch (error) {
-        console.error(error)
-    }
+    await p
 }
 
 function dbAppendMessage(room, msgArg) {
