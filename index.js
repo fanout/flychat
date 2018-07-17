@@ -441,6 +441,10 @@ async function handler(request) {
             }
         }
         return new Response(result, respInit)
+    } else if (url.pathname == '/js/url-polyfill.min.js') {
+        const res = await fetch('file://client/url-polyfill.min.js')
+        res.headers.set('content-type', 'application/javascript')
+        return res
     } else if (url.pathname == '/js/eventsource.min.js') {
         const res = await fetch('file://client/eventsource.min.js')
         res.headers.set('content-type', 'application/javascript')

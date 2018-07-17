@@ -48,6 +48,7 @@ config:
   awsDbTable: flychat-messages
 
 files:
+  - client/url-polyfill.min.js
   - client/eventsource.min.js
   - client/reconnecting-eventsource.js
   - client/join.html
