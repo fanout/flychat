@@ -1,16 +1,16 @@
 # Fly Chat
 
-This is a chat demo to showcase how to build a serverless realtime application with [Fanout Cloud](https://fanout.io/) and [Fly](https://fly.io/). The backend is a JavaScript application that runs statelessly on Fly. Streaming connections are handled by Fanout Cloud. Message data is stored in AWS DynamoDB.
+This chat demo shows how to build a serverless realtime application with [Fanout Cloud](https://fanout.io/) and [Fly](https://fly.io/). The backend is a JavaScript application that runs statelessly on Fly. Streaming connections are handled by Fanout Cloud. Message data is stored in AWS DynamoDB.
 
 There is a public instance: http://flychat.fanoutapp.com/
 
 ## How it works
 
-Fanout Cloud works as a proxy server in front of the Fly app. Clients make requests to Fanout Cloud, which are then forwarded to the Fly app. For the streaming endpoint, the Fly app controls Fanout Cloud using the [GRIP protocol](https://pushpin.org/docs/grip). For all other endpoints, the Fly app sends normal HTTP responses and Fanout Cloud acts as a passthrough.
+Fanout Cloud works as a proxy server in front of the Fly app. Clients make requests to Fanout Cloud, which are then forwarded to the Fly app. For the streaming endpoint, the Fly app controls Fanout Cloud using the [GRIP protocol](https://pushpin.org/docs/protocols/grip). For all other endpoints, the Fly app sends normal HTTP responses and Fanout Cloud acts as a passthrough.
 
 The [client/server API](#API) is simple and clean: mainly a GET to receive a Server-Sent Events stream of messages for a chatroom, and a POST to send a message to a chatroom.
 
-This example highlights several important technical achievements:
+This project highlights several important technical achievements:
 
 * Statelessness - One usually thinks of realtime web applications as being quite stateful, due to the need for long-lived connections. By delegating long-lived connection management to Fanout Cloud, it is possible to write business logic that can be executed statelessly by Fly, resulting in a realtime serverless architecture. There are no long-running processes to manage. The Fly app can be modified and redeployed at any time without disconnecting clients.
 
@@ -20,7 +20,7 @@ This example highlights several important technical achievements:
 
 The app also does a couple of tricks:
 
-* Server-side rendering - For snappy initial loading, the chat history is pre-rendered into the HTML received by the browser.
+* Server-side rendering - For snappy loading, the chat history is pre-rendered into the initial HTML received by the browser.
 
 * Provisional sending - Messages are published to Fanout Cloud before writing to DynamoDB. This ensures other clients receive each message as soon as possible (via Fanout and Fly regional datacenters), without having to wait on a round trip to a centralized DB.
 
