@@ -10,7 +10,7 @@ Fanout Cloud works as a proxy server in front of the Fly app. Clients make reque
 
 The [client/server API](#api) is simple and clean: mainly a GET to receive a Server-Sent Events stream of messages for a chatroom, and a POST to send a message to a chatroom.
 
-This project highlights several important technical achievements:
+This project highlights several important architectural aspects:
 
 * Statelessness - One usually thinks of realtime web applications as being quite stateful, due to the need for long-lived connections. By delegating long-lived connection management to Fanout Cloud, it is possible to write business logic that can be executed statelessly by Fly, resulting in a realtime serverless architecture. There are no long-running processes to manage. The Fly app can be modified and redeployed at any time without disconnecting clients.
 
