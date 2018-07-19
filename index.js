@@ -1,5 +1,6 @@
 const pubcontrol = require('pubcontrol')
 const grip = require('grip')
+const faasGrip = require('faas-grip');
 const AWS = require('aws-sdk')
 const EventEmitter = require('events')
 const uuidv4 = require('uuid/v4')
@@ -68,9 +69,7 @@ AWS.config.update({
 
 const db = new AWS.DynamoDB.DocumentClient()
 
-const gripConfig = grip.parseGripUri(app.config.gripUrl)
-
-var pub = new grip.GripPubControl(gripConfig)
+process.env.GRIP_URL = app.config.gripUrl
 
 addEventListener('fetch', function (event) {
     event.respondWith(handler(event.request))
@@ -96,25 +95,11 @@ async function sendMessage(room, msg) {
         channel = 'provisional-' + room
     }
 
-    const p = new Promise(resolve => {
-        pub.publishHttpStream(
-            channel,
-            s,
-            id,
-            prevId,
-            function (success, message, context) {
-                if (!success) {
-                    console.log('Publish failed!');
-                    console.log('Message: ' + message);
-                    console.log('Context: ');
-                    console.dir(context);
-                }
-                resolve()
-            }
-        )
-    })
-
-    await p
+    try {
+        await faasGrip.publish(channel, [new grip.HttpStreamFormat(s)], id, prevId)
+    } catch (err) {
+        console.log('Publish failed! Message: ' + err.message)
+    }
 }
 
 function dbAppendMessage(room, msgArg) {
