@@ -1,4 +1,3 @@
-const pubcontrol = require('pubcontrol')
 const grip = require('grip')
 const faasGrip = require('faas-grip');
 const AWS = require('aws-sdk')
