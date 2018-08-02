@@ -74,6 +74,17 @@ addEventListener('fetch', function (event) {
     event.respondWith(handler(event.request))
 })
 
+var escapeHtml = function (s) {
+    var tagsToReplace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;'
+    };
+    return s.replace(/[&<>]/g, function(tag) {
+        return tagsToReplace[tag] || tag;
+    });
+};
+
 async function sendMessage(room, msg) {
     var s = 'event: message\n'
 
@@ -407,7 +418,7 @@ async function handler(request) {
             if (msg.provisionalId) {
                 msgsHtml += ' id="' + msg.provisionalId + '"'
             }
-            msgsHtml += '><b>' + msg.from + '</b>: ' + msg.text + '</span><br />'
+            msgsHtml += '><b>' + escapeHtml(msg.from) + '</b>: ' + escapeHtml(msg.text) + '</span><br />'
             if (i + 1 < data.messages.length) {
                 msgsHtml += '\n        '
             }

@@ -83,6 +83,17 @@
     </style>
 
     <script type="text/javascript">
+      var escapeHtml = function (s) {
+          var tagsToReplace = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;'
+          };
+          return s.replace(/[&<>]/g, function(tag) {
+            return tagsToReplace[tag] || tag;
+          });
+      };
+
       var scrollToBottom = function (e) {
         e.scrollTop = e.scrollHeight;
       }
@@ -158,7 +169,7 @@
             }
           }
 
-          appendLog('<b>' + msg.from + '</b>: ' + msg.text, msg.provisionalId);
+          appendLog('<b>' + escapeHtml(msg.from) + '</b>: ' + escapeHtml(msg.text), msg.provisionalId);
         }, false);
 
         $('#send-form').submit(function () {
