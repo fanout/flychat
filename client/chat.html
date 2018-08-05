@@ -84,14 +84,14 @@
 
     <script type="text/javascript">
       var escapeHtml = function (s) {
-          var tagsToReplace = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;'
-          };
-          return s.replace(/[&<>]/g, function(tag) {
-            return tagsToReplace[tag] || tag;
-          });
+        var tagsToReplace = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;'
+        };
+        return s.replace(/[&<>]/g, function(tag) {
+          return tagsToReplace[tag] || tag;
+        });
       };
 
       var scrollToBottom = function (e) {
